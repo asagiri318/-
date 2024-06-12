@@ -1,20 +1,44 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\RegistrationController;
 
-Route::get('/', function () {
-    return view('welcome');
+// ユーザー登録ルート
+Route::get('/register', [RegistrationController::class, 'create'])->name('register');
+Route::post('/register', [RegistrationController::class, 'store']);
+
+// ホームページ
+Route::get('/', [ProductController::class, 'index'])->name('home');
+
+// 商品関連のルート
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show')->where('product', '[0-9]+');
+
+// 認証が必要なルート
+Route::middleware(['auth'])->group(function () {
+    Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit')->where('product', '[0-9]+');
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update')->where('product', '[0-9]+');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy')->where('product', '[0-9]+');
+
+    // ダッシュボードルート
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+
+    // プロフィール編集ルート
+    Route::get('/profile/edit', function () {
+        // ここにプロフィール編集画面のロジックを追加
+    })->name('profile.edit');
+
+    // ログアウトルート
+    Route::post('/logout', function () {
+        auth()->logout(); // ログアウト処理
+        return redirect('/'); // ログアウト後にホームページにリダイレクト
+    })->name('logout');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-require __DIR__.'/auth.php';
+// 認証用のルート
+require __DIR__ . '/auth.php';
